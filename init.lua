@@ -334,6 +334,7 @@ require('lazy').setup({
 
       -- Document existing key chains
       spec = {
+        { '<leader>c', group = '[C]ode' },
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
@@ -425,6 +426,12 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set(
+        'n',
+        '<leader>sF',
+        function() builtin.find_files { hidden = true, no_ignore = true } end,
+        { desc = '[S]earch all [F]iles (hidden + ignored)' }
+      )
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -838,70 +845,6 @@ require('lazy').setup({
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
-  { -- File tree with LSP rename/move support
-    'nvim-neo-tree/neo-tree.nvim',
-    branch = 'v3.x',
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'nvim-tree/nvim-web-devicons',
-      'MunifTanjim/nui.nvim',
-      {
-        'antosha417/nvim-lsp-file-operations',
-        dependencies = { 'nvim-lua/plenary.nvim' },
-        config = true,
-      },
-    },
-    keys = {
-      { '<leader>e', '<cmd>Neotree toggle<cr>', desc = 'File [E]xplorer' },
-      { '-', '<cmd>Neotree reveal<cr>', desc = 'Reveal file in tree' },
-    },
-    opts = {
-      window = {
-        mappings = {
-          ['l'] = 'open',
-          ['h'] = 'close_node',
-          ['<space>'] = 'none', -- disable space so leader key works
-        },
-      },
-      event_handlers = {
-        {
-          event = 'file_open_requested',
-          handler = function()
-            require('neo-tree.command').execute { action = 'close' }
-          end,
-        },
-      },
-      filesystem = {
-        filtered_items = {
-          hide_dotfiles = false,
-          hide_gitignored = false,
-        },
-        follow_current_file = { enabled = true },
-      },
-      default_component_configs = {
-        icon = {
-          folder_closed = vim.g.have_nerd_font and '' or '>',
-          folder_open = vim.g.have_nerd_font and '' or 'v',
-          folder_empty = vim.g.have_nerd_font and '' or '>',
-          default = vim.g.have_nerd_font and '' or '*',
-        },
-        git_status = {
-          symbols = vim.g.have_nerd_font and {} or {
-            added = '+',
-            modified = '~',
-            deleted = 'x',
-            renamed = 'r',
-            untracked = '?',
-            ignored = '/',
-            unstaged = 'U',
-            staged = 'S',
-            conflict = '!',
-          },
-        },
-      },
-    },
-  },
-
   { -- Collection of various small independent plugins/modules
     'nvim-mini/mini.nvim',
     config = function()
@@ -919,9 +862,6 @@ require('lazy').setup({
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
       require('mini.surround').setup()
-
-      -- Auto-close brackets, quotes, etc.
-      require('mini.pairs').setup()
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -941,14 +881,39 @@ require('lazy').setup({
     end,
   },
 
+  { -- Test runner
+    'nvim-neotest/neotest',
+    dependencies = {
+      'nvim-neotest/nvim-nio',
+      'nvim-lua/plenary.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'fredrikaverpil/neotest-golang',
+    },
+    keys = {
+      { '<leader>ctt', function() require('neotest').run.run() end, desc = '[T]est nearest' },
+      { '<leader>ctf', function() require('neotest').run.run(vim.fn.expand '%') end, desc = 'Test [F]ile' },
+      { '<leader>cts', function() require('neotest').summary.toggle() end, desc = 'Test [S]ummary' },
+      { '<leader>cto', function() require('neotest').output.open { enter = true } end, desc = 'Test [O]utput' },
+    },
+    config = function()
+      require('neotest').setup {
+        adapters = {
+          require 'neotest-golang'(),
+        },
+      }
+    end,
+  },
+
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
+    build = ':TSUpdate',
     config = function()
-      local filetypes = { 'bash', 'c', 'diff', 'go', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
-      require('nvim-treesitter').install(filetypes)
+      local parsers = { 'bash', 'c', 'diff', 'go', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+      require('nvim-treesitter').install(parsers)
+      -- Enable treesitter highlighting for these filetypes
       vim.api.nvim_create_autocmd('FileType', {
-        pattern = filetypes,
-        callback = function() vim.treesitter.start() end,
+        pattern = { 'bash', 'sh', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork', 'html', 'lua', 'markdown', 'query', 'vim', 'help' },
+        callback = function() pcall(vim.treesitter.start) end,
       })
     end,
   },
@@ -962,11 +927,11 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
