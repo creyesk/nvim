@@ -91,6 +91,15 @@ return {
       --    Feel free to remove or use ones that you like more! :)
       --    Don't feel like these are good choices.
       icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
+      mappings = {
+        -- NOTE: expand is a toggle, no separate collapse action exists
+        expand = { '<CR>', '<2-LeftMouse>', 'h', 'l' },
+        open = 'o',
+        remove = 'd',
+        edit = 'e',
+        repl = 'r',
+        toggle = 't',
+      },
       controls = {
         icons = {
           pause = '⏸',

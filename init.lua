@@ -164,6 +164,16 @@ vim.o.foldmethod = 'expr'
 vim.o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
 vim.o.foldlevelstart = 99 -- start with all folds open
 
+-- Enable treesitter highlighting for common filetypes
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'bash', 'sh', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork', 'html', 'json', 'lua', 'markdown', 'query', 'vim', 'help' },
+  callback = function(args)
+    vim.schedule(function()
+      pcall(vim.treesitter.start, args.buf)
+    end)
+  end,
+})
+
 -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s)
 -- See `:help 'confirm'`
@@ -336,7 +346,7 @@ require('lazy').setup({
       spec = {
         { '<leader>c', group = '[C]ode' },
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
-        { '<leader>t', group = '[T]oggle' },
+        { '<leader>t', group = '[T]erminal' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
     },
@@ -411,7 +421,11 @@ require('lazy').setup({
         --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
         --   },
         -- },
-        -- pickers = {}
+        pickers = {
+          colorscheme = {
+            enable_preview = true,
+          },
+        },
         extensions = {
           ['ui-select'] = { require('telescope.themes').get_dropdown() },
         },
@@ -605,13 +619,6 @@ require('lazy').setup({
             })
           end
 
-          -- The following code creates a keymap to toggle inlay hints in your
-          -- code, if the language server you are using supports them
-          --
-          -- This may be unwanted, since they displace some of your code
-          if client and client:supports_method('textDocument/inlayHint', event.buf) then
-            map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
-          end
         end,
       })
 
@@ -820,26 +827,14 @@ require('lazy').setup({
     },
   },
 
-  { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
-    -- change the command in the config to whatever the name of that colorscheme is.
-    --
-    -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
+  { -- Tokyonight colorscheme (available via :Telescope colorscheme)
     'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
-    config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
-        },
-      }
-
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
-    end,
+    lazy = true,
+    opts = {
+      styles = {
+        comments = { italic = false },
+      },
+    },
   },
 
   -- Highlight todo, notes, etc in comments
@@ -908,13 +903,8 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     config = function()
-      local parsers = { 'bash', 'c', 'diff', 'go', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+      local parsers = { 'bash', 'c', 'diff', 'go', 'html', 'json', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
       require('nvim-treesitter').install(parsers)
-      -- Enable treesitter highlighting for these filetypes
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = { 'bash', 'sh', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork', 'html', 'lua', 'markdown', 'query', 'vim', 'help' },
-        callback = function() pcall(vim.treesitter.start) end,
-      })
     end,
   },
 
@@ -932,7 +922,12 @@ require('lazy').setup({
   -- require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.foldtext',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+
+  -- Custom plugins
+  require 'custom.plugins.terminal',
+  require 'custom.plugins.colorschemes',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
