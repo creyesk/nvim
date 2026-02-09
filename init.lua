@@ -166,7 +166,7 @@ vim.o.foldlevelstart = 99 -- start with all folds open
 
 -- Enable treesitter highlighting for common filetypes
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = { 'bash', 'sh', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork', 'html', 'json', 'lua', 'markdown', 'query', 'vim', 'help' },
+  pattern = { 'bash', 'sh', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork', 'html', 'json', 'lua', 'markdown', 'query', 'rust', 'vim', 'help' },
   callback = function(args)
     vim.schedule(function()
       pcall(vim.treesitter.start, args.buf)
@@ -635,7 +635,7 @@ require('lazy').setup({
         -- clangd = {},
         gopls = {},
         -- pyright = {},
-        -- rust_analyzer = {},
+        rust_analyzer = {},
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
         --    https://github.com/pmizio/typescript-tools.nvim
@@ -883,6 +883,7 @@ require('lazy').setup({
       'nvim-lua/plenary.nvim',
       'nvim-treesitter/nvim-treesitter',
       'fredrikaverpil/neotest-golang',
+      'rouge8/neotest-rust',
     },
     keys = {
       { '<leader>ctt', function() require('neotest').run.run() end, desc = '[T]est nearest' },
@@ -894,6 +895,7 @@ require('lazy').setup({
       require('neotest').setup {
         adapters = {
           require 'neotest-golang'(),
+          require 'neotest-rust',
         },
       }
     end,
@@ -903,7 +905,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     config = function()
-      local parsers = { 'bash', 'c', 'diff', 'go', 'html', 'json', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+      local parsers = { 'bash', 'c', 'diff', 'go', 'html', 'json', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'rust', 'toml', 'vim', 'vimdoc' }
       require('nvim-treesitter').install(parsers)
     end,
   },
@@ -928,6 +930,7 @@ require('lazy').setup({
   -- Custom plugins
   require 'custom.plugins.terminal',
   require 'custom.plugins.colorschemes',
+  require 'custom.plugins.vim-be-good',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
