@@ -25,24 +25,24 @@ return {
     'leoluz/nvim-dap-go',
   },
   keys = {
-    -- Basic debugging keymaps, feel free to change to your liking!
+    -- JetBrains-style debugging keymaps
     {
-      '<F5>',
-      function() require('dap').continue() end,
-      desc = 'Debug: Start/Continue',
-    },
-    {
-      '<F1>',
+      '<F7>',
       function() require('dap').step_into() end,
       desc = 'Debug: Step Into',
     },
     {
-      '<F2>',
+      '<F8>',
       function() require('dap').step_over() end,
-      desc = 'Debug: Step Over',
+      desc = 'Debug: Step Over (next line)',
     },
     {
-      '<F3>',
+      '<F9>',
+      function() require('dap').continue() end,
+      desc = 'Debug: Continue (next breakpoint)',
+    },
+    {
+      '<S-F8>',
       function() require('dap').step_out() end,
       desc = 'Debug: Step Out',
     },
@@ -54,13 +54,17 @@ return {
     {
       '<leader>B',
       function() require('dap').set_breakpoint(vim.fn.input 'Breakpoint condition: ') end,
-      desc = 'Debug: Set Breakpoint',
+      desc = 'Debug: Conditional Breakpoint',
     },
-    -- Toggle to see last session result. Without this, you can't see session output in case of unhandled exception.
     {
-      '<F7>',
+      '<leader>du',
       function() require('dapui').toggle() end,
-      desc = 'Debug: See last session result.',
+      desc = 'Debug: Toggle UI',
+    },
+    {
+      '<leader>ds',
+      function() require('dap').terminate() end,
+      desc = 'Debug: Stop',
     },
   },
   config = function()
@@ -80,7 +84,8 @@ return {
       -- online, please don't ask me how to install them :)
       ensure_installed = {
         -- Update this to ensure that you have the debuggers for the langs you want
-        'delve',
+        'delve', -- Go debugger
+        'codelldb', -- Rust/C/C++ debugger
       },
     }
 
@@ -137,6 +142,53 @@ return {
         -- On Windows delve must be run attached or it crashes.
         -- See https://github.com/leoluz/nvim-dap-go/blob/main/README.md#configuring
         detached = vim.fn.has 'win32' == 0,
+      },
+    }
+
+    -- Rust debugging configuration (codelldb)
+    -- mason-nvim-dap handles the adapter setup, but we configure the launch configs
+    dap.configurations.rust = {
+      {
+        name = 'Launch',
+        type = 'codelldb',
+        request = 'launch',
+        program = function()
+          -- First try to find the binary from cargo
+          local cwd = vim.fn.getcwd()
+          local cargo_toml = vim.fn.findfile('Cargo.toml', cwd .. ';')
+          if cargo_toml ~= '' then
+            local project_name = vim.fn.fnamemodify(vim.fn.fnamemodify(cargo_toml, ':h'), ':t')
+            local debug_path = vim.fn.fnamemodify(cargo_toml, ':h') .. '/target/debug/' .. project_name
+            if vim.fn.filereadable(debug_path) == 1 then
+              return debug_path
+            end
+          end
+          return vim.fn.input('Path to executable: ', cwd .. '/target/debug/', 'file')
+        end,
+        cwd = '${workspaceFolder}',
+        stopOnEntry = false,
+        args = {},
+      },
+      {
+        name = 'Launch (with args)',
+        type = 'codelldb',
+        request = 'launch',
+        program = function()
+          return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/target/debug/', 'file')
+        end,
+        cwd = '${workspaceFolder}',
+        stopOnEntry = false,
+        args = function()
+          local args_string = vim.fn.input 'Arguments: '
+          return vim.split(args_string, ' ')
+        end,
+      },
+      {
+        name = 'Attach to process',
+        type = 'codelldb',
+        request = 'attach',
+        pid = require('dap.utils').pick_process,
+        cwd = '${workspaceFolder}',
       },
     }
   end,

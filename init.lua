@@ -889,13 +889,76 @@ require('lazy').setup({
       { '<leader>ctt', function() require('neotest').run.run() end, desc = '[T]est nearest' },
       { '<leader>ctf', function() require('neotest').run.run(vim.fn.expand '%') end, desc = 'Test [F]ile' },
       { '<leader>cts', function() require('neotest').summary.toggle() end, desc = 'Test [S]ummary' },
-      { '<leader>cto', function() require('neotest').output.open { enter = true } end, desc = 'Test [O]utput' },
+      { '<leader>cto', function() require('neotest').output.open { enter = true, last_run = true } end, desc = 'Test [O]utput' },
+      { '<leader>ctp', function() require('neotest').output_panel.toggle() end, desc = 'Test [P]anel' },
+      { '<leader>ctd', function() require('neotest').run.run { strategy = 'dap' } end, desc = '[D]ebug nearest test' },
+      { '<leader>ctl', function() require('neotest').run.run_last() end, desc = 'Run [L]ast test' },
+      { '<leader>cta', function() require('neotest').run.run(vim.fn.getcwd()) end, desc = 'Run [A]ll tests' },
+      { '[t', function() require('neotest').jump.prev { status = 'failed' } end, desc = 'Previous failed test' },
+      { ']t', function() require('neotest').jump.next { status = 'failed' } end, desc = 'Next failed test' },
     },
     config = function()
       require('neotest').setup {
         adapters = {
-          require 'neotest-golang'(),
-          require 'neotest-rust',
+          require 'neotest-golang' {
+            -- Enable testify suite support
+            testify_enabled = true,
+            -- Recurse into subdirectories
+            recursive_run = true,
+            -- Verbose output with race detection
+            go_test_args = { '-v', '-race', '-count=1' },
+            -- Use gotestsum for better output parsing (install: go install gotest.tools/gotestsum@latest)
+            -- runner = 'gotestsum',
+          },
+          require 'neotest-rust' {
+            args = { '--no-capture' }, -- Show println! output
+          },
+        },
+        -- Better output display
+        output = {
+          enabled = true,
+          open_on_run = false, -- Don't auto-open, use <leader>cto
+        },
+        output_panel = {
+          enabled = true,
+          open = 'botright split | resize 15',
+        },
+        summary = {
+          enabled = true,
+          animated = true,
+          follow = true,
+          expand_errors = true,
+          mappings = {
+            expand = { '<CR>', '<2-LeftMouse>' },
+            expand_all = 'e',
+            output = 'o',
+            short = 'O',
+            attach = 'a',
+            jumpto = 'i',
+            stop = 'u',
+            run = 'r',
+            debug = 'd',
+            mark = 'm',
+            run_marked = 'R',
+            debug_marked = 'D',
+            clear_marked = 'M',
+            target = 't',
+            clear_target = 'T',
+            next_failed = 'J',
+            prev_failed = 'K',
+          },
+        },
+        status = {
+          enabled = true,
+          signs = true,
+          virtual_text = true,
+        },
+        icons = {
+          passed = '✓',
+          failed = '✗',
+          running = '⟳',
+          skipped = '○',
+          unknown = '?',
         },
       }
     end,
