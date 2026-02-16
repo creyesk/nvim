@@ -1,5 +1,14 @@
 -- Additional colorschemes for easy switching
 -- Use :Telescope colorscheme to preview and switch themes
+
+-- Auto-set background for themes that depend on it
+vim.api.nvim_create_autocmd('ColorSchemePre', {
+  pattern = { 'gruvbox-material', 'everforest', 'seoul256', 'gruvbox' },
+  callback = function()
+    vim.o.background = 'light'
+  end,
+})
+
 return {
   {
     'catppuccin/nvim',
@@ -14,11 +23,8 @@ return {
   {
     'rose-pine/neovim',
     name = 'rose-pine',
-    priority = 1000, -- Load before other plugins since it's the default
-    config = function()
-      require('rose-pine').setup {}
-      vim.cmd.colorscheme 'rose-pine-dawn'
-    end,
+    lazy = true,
+    opts = {},
     -- Variants: rose-pine-main, rose-pine-moon, rose-pine-dawn (light)
   },
 
@@ -56,11 +62,14 @@ return {
   -- Light-friendly colorschemes
   {
     'rebelot/kanagawa.nvim',
-    lazy = true,
-    opts = {
-      commentStyle = { italic = false },
-      keywordStyle = { italic = false },
-    },
+    priority = 1000, -- Load before other plugins since it's the default
+    config = function()
+      require('kanagawa').setup {
+        commentStyle = { italic = false },
+        keywordStyle = { italic = false },
+      }
+      vim.cmd.colorscheme 'kanagawa-lotus'
+    end,
     -- Variants: kanagawa-wave (dark), kanagawa-dragon (dark), kanagawa-lotus (light)
   },
 

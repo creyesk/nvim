@@ -8,7 +8,7 @@ return {
     vim.opt.fillchars:append { fold = ' ' }
 
     vim.api.nvim_create_autocmd('FileType', {
-      pattern = { 'json', 'javascript', 'typescript', 'lua', 'go' },
+      pattern = { 'json', 'javascript', 'typescript', 'lua', 'go', 'rust' },
       callback = function()
         vim.opt_local.foldtext = 'v:lua.CustomFoldText()'
       end,
