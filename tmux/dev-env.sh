@@ -4,8 +4,8 @@
 # Layout: Left 1/4 (claude), Right 3/4 (nvim)
 # Optional: Toggle bottom pane in left section with prefix + b
 
-SESSION_NAME="dev"
 WORK_DIR="${PWD}"
+SESSION_NAME="dev-$(basename "$WORK_DIR")"
 
 # Check if session already exists
 if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then

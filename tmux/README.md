@@ -13,10 +13,16 @@ ln -sf ~/.config/nvim/tmux/tmux.conf ~/.config/tmux/tmux.conf
 
 ## Dev Environment
 
-Launch a tmux session with claude (left 1/4) and nvim (right 3/4):
+Add the `dev` alias to your shell:
 
 ```sh
-bash ~/.config/nvim/tmux/dev-env.sh
+echo 'alias dev="bash ~/.config/nvim/tmux/dev-env.sh"' >> ~/.zshrc
+```
+
+Then launch a tmux session with claude (left 1/4) and nvim (right 3/4):
+
+```sh
+dev
 ```
 
 - `Ctrl+h/j/k/l` navigates between tmux panes and nvim splits
