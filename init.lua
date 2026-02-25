@@ -255,6 +255,12 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
+-- Auto-save when leaving a buffer or losing focus
+vim.api.nvim_create_autocmd({ 'BufLeave', 'FocusLost' }, {
+  pattern = '*',
+  command = 'silent! w',
+})
+
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
 --  See `:help vim.hl.on_yank()`
