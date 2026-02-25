@@ -179,6 +179,17 @@ vim.api.nvim_create_autocmd('FileType', {
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- Automatically re-read files changed outside of Neovim (e.g. by Claude, git, etc.)
+vim.o.autoread = true
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
+  group = vim.api.nvim_create_augroup('auto-checktime', { clear = true }),
+  callback = function()
+    if vim.fn.getcmdwintype() == '' then
+      vim.cmd 'checktime'
+    end
+  end,
+})
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
