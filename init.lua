@@ -168,9 +168,7 @@ vim.o.foldlevelstart = 99 -- start with all folds open
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { 'bash', 'sh', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork', 'html', 'json', 'lua', 'markdown', 'query', 'rust', 'vim', 'help' },
   callback = function(args)
-    vim.schedule(function()
-      pcall(vim.treesitter.start, args.buf)
-    end)
+    vim.schedule(function() pcall(vim.treesitter.start, args.buf) end)
   end,
 })
 
@@ -184,9 +182,7 @@ vim.o.autoread = true
 vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
   group = vim.api.nvim_create_augroup('auto-checktime', { clear = true }),
   callback = function()
-    if vim.fn.getcmdwintype() == '' then
-      vim.cmd 'checktime'
-    end
+    if vim.fn.getcmdwintype() == '' then vim.cmd 'checktime' end
   end,
 })
 
@@ -253,6 +249,7 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
+-- 
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -635,7 +632,6 @@ require('lazy').setup({
               end,
             })
           end
-
         end,
       })
 
@@ -1020,6 +1016,7 @@ require('lazy').setup({
   require 'custom.plugins.terminal',
   require 'custom.plugins.colorschemes',
   require 'custom.plugins.vim-be-good',
+  require 'custom.plugins.minuet',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
