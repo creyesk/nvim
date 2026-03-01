@@ -1,30 +1,40 @@
 return {
   'milanglacier/minuet-ai.nvim',
-  dependencies = {
-    'nvim-lua/plenary.nvim',
-  },
   config = function()
     require('minuet').setup {
-      -- Enable Copilot-style ghost text
-      virtualtext = {
-        auto_trigger_ft = { '*' }, -- Triggers automatically in all filetypes
-        keymap = {
-          accept = '<A-y>', -- Alt+y to accept the whole suggestion
-          accept_line = '<A-a>', -- Alt+a to accept line-by-line (great for long snippets)
-          prev = '<A-[>', -- Alt+[ to cycle to previous suggestion
-          next = '<A-]>', -- Alt+] to cycle to next suggestion
-          dismiss = '<A-e>', -- Alt+e to dismiss
+      debounce = 50,
+      request_timeout = 2.5,
+      provider = 'openai_fim_compatible',
+      provider_options = {
+        openai_fim_compatible = {
+          model = 'qwen2.5-coder:7b',
+          end_point = 'http://localhost:11434/v1/completions',
+          api_key = 'TERM',
+          name = 'Ollama',
+          stream = true,
+          -- Fixed: Minuet expects these as functions, not strings
+          template = {
+            prefix = function() return '<|fim_prefix|>' end,
+            suffix = function() return '<|fim_suffix|>' end,
+            middle = function() return '<|fim_middle|>' end,
+          },
         },
       },
-      provider = 'ollama',
-      provider_options = {
-        ollama = {
-          -- Update this to match the exact model you pulled in Step 2!
-          model = 'qwen2.5-coder:3b',
-          end_point = 'http://127.0.0.1:11434/api/generate',
-          stream = true,
+      virtualtext = {
+        auto_trigger_ft = { '*' },
+        keymap = {
+          accept = '<A-y>',
+          accept_line = '<A-a>',
+          prev = '<A-k>',
+          next = '<A-j>',
+          dismiss = '<A-n>',
         },
       },
     }
+
+    -- Toggle minuet suggestions on/off with <leader>ta
+    vim.keymap.set('n', '<leader>ta', function()
+      require('minuet.virtualtext').action.toggle_auto_trigger()
+    end, { desc = '[T]oggle Minuet [A]I suggestions' })
   end,
 }
