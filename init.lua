@@ -262,10 +262,10 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
--- Auto-save when leaving a buffer or losing focus
+-- Auto-save when leaving a buffer or losing focus (noautocmd to skip format-on-save)
 vim.api.nvim_create_autocmd({ 'BufLeave', 'FocusLost' }, {
   pattern = '*',
-  command = 'silent! w',
+  command = 'noautocmd silent! w',
 })
 
 -- Highlight when yanking (copying) text
