@@ -162,13 +162,13 @@ vim.o.scrolloff = 10
 -- Treesitter-based folding
 vim.o.foldmethod = 'expr'
 vim.o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-vim.o.foldlevelstart = 99 -- start with all folds open
+vim.o.foldlevel = 1
 
--- Enable treesitter highlighting for common filetypes
+-- Enable treesitter highlighting and folding for common filetypes
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { 'bash', 'sh', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork', 'html', 'json', 'lua', 'markdown', 'query', 'rust', 'vim', 'help' },
   callback = function(args)
-    vim.schedule(function() pcall(vim.treesitter.start, args.buf) end)
+    pcall(vim.treesitter.start, args.buf)
   end,
 })
 
