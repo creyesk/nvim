@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# dev-env.sh - Launch tmux with nvim + claude code layout
-# Layout: Left 1/4 (claude), Right 3/4 (nvim)
+# dev-env.sh - Launch tmux with nvim + opencode code layout
+# Layout: Left 1/4 (opencode), Right 3/4 (nvim)
 
 WORK_DIR="${PWD}"
 SESSION_NAME="dev-$(basename "$WORK_DIR")"
@@ -17,10 +17,10 @@ fi
 tmux new-session -d -s "$SESSION_NAME" -c "$WORK_DIR"
 
 # Split the main window vertically (left 1/4 | right 3/4)
-tmux split-window -h -t "$SESSION_NAME" -p 75 -c "$WORK_DIR"
+tmux split-window -h -t "$SESSION_NAME" -p 66 -c "$WORK_DIR"
 
-# Left pane (index 0): claude code
-tmux send-keys -t "$SESSION_NAME:0.0" "claude" Enter
+# Left pane (index 0): opencode code
+tmux send-keys -t "$SESSION_NAME:0.0" "opencode" Enter
 
 # Right pane (index 1): nvim
 tmux send-keys -t "$SESSION_NAME:0.1" "nvim" Enter
