@@ -1015,6 +1015,7 @@ require('lazy').setup({
   require 'custom.plugins.terminal',
   require 'custom.plugins.colorschemes',
   require 'custom.plugins.vim-be-good',
+  require 'custom.plugins.diffview',
   require 'custom.plugins.minuet',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
