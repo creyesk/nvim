@@ -978,6 +978,27 @@ require('lazy').setup({
       { '<leader>ctd', function() require('neotest').run.run { strategy = 'dap' } end, desc = '[D]ebug nearest test' },
       { '<leader>ctl', function() require('neotest').run.run_last() end, desc = 'Run [L]ast test' },
       { '<leader>cta', function() require('neotest').run.run(vim.fn.getcwd()) end, desc = 'Run [A]ll tests' },
+      { '<leader>cte', function()
+        vim.ui.input({ prompt = 'Env vars (KEY=val KEY2=val2): ' }, function(env)
+          if not env then
+            return
+          end
+          -- Parse env vars and set temporarily
+          local old_env = {}
+          for key, val in env:gmatch '(%w+)=([^%s]+)' do
+            old_env[key] = vim.env[key]
+            vim.env[key] = val
+          end
+          -- Run test
+          require('neotest').run.run()
+          -- Restore old values after short delay
+          vim.defer_fn(function()
+            for key, val in pairs(old_env) do
+              vim.env[key] = val
+            end
+          end, 1000)
+        end)
+      end, desc = 'Run with [E]nv vars' },
       { '[t', function() require('neotest').jump.prev { status = 'failed' } end, desc = 'Previous failed test' },
       { ']t', function() require('neotest').jump.next { status = 'failed' } end, desc = 'Next failed test' },
     },
@@ -1002,6 +1023,32 @@ require('lazy').setup({
           vim.notify(name .. ' failed to load: ' .. tostring(adapter), vim.log.levels.WARN)
           return nil
         end
+      end
+
+      -- Setup Colima Docker env for testcontainers (macOS only, can be disabled via _G.colima_enabled)
+      _G.colima_enabled = vim.loop.os_uname().sysname == 'Darwin'
+      local function setup_colima_env()
+        if _G.colima_enabled and vim.loop.os_uname().sysname == 'Darwin' then
+          vim.env.DOCKER_HOST = 'unix://' .. os.getenv 'HOME' .. '/.colima/default/docker.sock'
+          vim.env.TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = vim.env.DOCKER_HOST:gsub('unix://', '')
+          vim.env.TESTCONTAINERS_RYUK_DISABLED = 'true'
+          vim.env.ENVIRONMENT = 'test'
+        else
+          vim.env.DOCKER_HOST = nil
+          vim.env.TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = nil
+          vim.env.TESTCONTAINERS_RYUK_DISABLED = nil
+          vim.env.ENVIRONMENT = nil
+        end
+      end
+      setup_colima_env()
+
+      -- Toggle Colima env keymap (macOS only)
+      if vim.loop.os_uname().sysname == 'Darwin' then
+        vim.keymap.set('n', '<leader>ctC', function()
+          _G.colima_enabled = not _G.colima_enabled
+          setup_colima_env()
+          vim.notify('Colima env ' .. (_G.colima_enabled and 'enabled' or 'disabled'), vim.log.levels.INFO)
+        end, { desc = 'Toggle [C]lima env' })
       end
 
       -- Load neotest-golang
