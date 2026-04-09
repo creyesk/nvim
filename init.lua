@@ -168,11 +168,69 @@ vim.o.foldlevel = 1
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { 'bash', 'sh', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork', 'html', 'json', 'lua', 'markdown', 'query', 'rust', 'vim', 'help' },
   callback = function(args)
-    pcall(vim.treesitter.start, args.buf)
+    local ok = pcall(vim.treesitter.start, args.buf)
+    if ok then
+      -- Ensure folding is enabled for treesitter buffers
+      vim.opt_local.foldmethod = 'expr'
+      vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+    end
   end,
 })
 
--- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
+-- Custom foldtext that shows item count for arrays
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'json', 'javascript', 'typescript', 'lua', 'go', 'rust' },
+  callback = function()
+    vim.opt_local.foldtext = 'v:lua.CustomFoldText()'
+  end,
+})
+
+function _G.CustomFoldText()
+  local start_line = vim.v.foldstart
+  local end_line = vim.v.foldend
+  local first_line = vim.fn.getline(start_line)
+  local line_count = end_line - start_line + 1
+
+  -- Try to count items using treesitter
+  local item_count = nil
+  local ok, parser = pcall(vim.treesitter.get_parser)
+  if ok and parser then
+    local tree = parser:parse()[1]
+    if tree then
+      local root = tree:root()
+      -- Find the column of '[' on the fold line
+      local bracket_col = first_line:find('%[')
+      if bracket_col then
+        bracket_col = bracket_col - 1 -- convert to 0-indexed
+        local node = root:named_descendant_for_range(start_line - 1, bracket_col, start_line - 1, bracket_col + 1)
+        while node do
+          if node:type() == 'array' then
+            local count = 0
+            for child in node:iter_children() do
+              if child:named() then
+                count = count + 1
+              end
+            end
+            if count > 0 then
+              item_count = count
+            end
+            break
+          end
+          node = node:parent()
+        end
+      end
+    end
+  end
+
+  -- Build the fold text
+  local item_str = item_count and (' · %d items'):format(item_count) or ''
+  return first_line .. ('  ⋯ %d lines%s '):format(line_count, item_str)
+end
+
+-- Clean fill character for folds
+vim.opt.fillchars:append { fold = ' ' }
+
+-- if performing an operation that would fail due to unsaved changes in the buffer (like `:q'),
 -- instead raise a dialog asking if you wish to save the current file(s)
 -- See `:help 'confirm'`
 vim.o.confirm = true
@@ -759,6 +817,8 @@ require('lazy').setup({
     event = 'VimEnter',
     version = '1.*',
     dependencies = {
+      -- Dadbod completion source for SQL buffers
+      { 'kristijanhusak/vim-dadbod-completion' },
       -- Snippet Engine
       {
         'L3MON4D3/LuaSnip',
@@ -828,7 +888,10 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets' },
+        default = { 'lsp', 'path', 'snippets', 'dadbod' },
+        providers = {
+          dadbod = { name = 'Dadbod', module = 'vim_dadbod_completion.blink' },
+        },
       },
 
       snippets = { preset = 'luasnip' },
@@ -898,12 +961,13 @@ require('lazy').setup({
 
   { -- Test runner
     'nvim-neotest/neotest',
+    event = 'VeryLazy', -- Delay loading until after startup
     dependencies = {
       'nvim-neotest/nvim-nio',
       'nvim-lua/plenary.nvim',
-      'nvim-treesitter/nvim-treesitter',
-      'fredrikaverpil/neotest-golang',
-      'rouge8/neotest-rust',
+      { 'nvim-treesitter/nvim-treesitter', lazy = false },
+      { 'fredrikaverpil/neotest-golang', dependencies = { 'nvim-treesitter/nvim-treesitter' } },
+      { 'rouge8/neotest-rust', dependencies = { 'nvim-treesitter/nvim-treesitter' } },
     },
     keys = {
       { '<leader>ctt', function() require('neotest').run.run() end, desc = '[T]est nearest' },
@@ -918,26 +982,54 @@ require('lazy').setup({
       { ']t', function() require('neotest').jump.next { status = 'failed' } end, desc = 'Next failed test' },
     },
     config = function()
+      -- Load adapters with error handling and retry
+      local adapters = {}
+
+      -- Helper to load adapter with clear cache retry
+      local function load_adapter(name, config_fn)
+        -- Clear any previous error state
+        package.loaded[name] = nil
+        for k, _ in pairs(package.loaded) do
+          if k:match('^' .. name:gsub('%-', '%%-')) then
+            package.loaded[k] = nil
+          end
+        end
+
+        local ok, adapter = pcall(require, name)
+        if ok then
+          return config_fn(adapter)
+        else
+          vim.notify(name .. ' failed to load: ' .. tostring(adapter), vim.log.levels.WARN)
+          return nil
+        end
+      end
+
+      -- Load neotest-golang
+      local golang = load_adapter('neotest-golang', function(adapter)
+        return adapter {
+          testify_enabled = true,
+          recursive_run = true,
+          go_test_args = { '-v', '-race', '-count=1' },
+        }
+      end)
+      if golang then
+        table.insert(adapters, golang)
+      end
+
+      -- Load neotest-rust
+      local rust = load_adapter('neotest-rust', function(adapter)
+        return adapter { args = { '--no-capture' } }
+      end)
+      if rust then
+        table.insert(adapters, rust)
+      end
+
       require('neotest').setup {
-        adapters = {
-          require 'neotest-golang' {
-            -- Enable testify suite support
-            testify_enabled = true,
-            -- Recurse into subdirectories
-            recursive_run = true,
-            -- Verbose output with race detection
-            go_test_args = { '-v', '-race', '-count=1' },
-            -- Use gotestsum for better output parsing (install: go install gotest.tools/gotestsum@latest)
-            -- runner = 'gotestsum',
-          },
-          require 'neotest-rust' {
-            args = { '--no-capture' }, -- Show println! output
-          },
-        },
+        adapters = adapters,
         -- Better output display
         output = {
           enabled = true,
-          open_on_run = false, -- Don't auto-open, use <leader>cto
+          open_on_run = false,
         },
         output_panel = {
           enabled = true,
@@ -986,10 +1078,26 @@ require('lazy').setup({
 
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
+    lazy = false, -- Load early so neotest adapters can use it
     build = ':TSUpdate',
     config = function()
+      -- Add site/parser to runtime path so treesitter can find installed parsers
+      vim.opt.runtimepath:prepend(vim.fn.stdpath 'data' .. '/site')
+
+      -- Install parsers (nvim-treesitter v1.0 API)
       local parsers = { 'bash', 'c', 'diff', 'go', 'html', 'json', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'rust', 'toml', 'vim', 'vimdoc' }
       require('nvim-treesitter').install(parsers)
+
+      -- Enable treesitter highlighting for neotest compatibility
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'go', 'gomod', 'gowork', 'gosum', 'rust', 'lua', 'c', 'bash' },
+        callback = function(args)
+          pcall(function()
+            vim.treesitter.start(args.buf)
+            vim.bo[args.buf].syntax = 'on'
+          end)
+        end,
+      })
     end,
   },
 
@@ -1007,7 +1115,6 @@ require('lazy').setup({
   -- require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
-  require 'kickstart.plugins.foldtext',
   require 'kickstart.plugins.tmux-navigation',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
@@ -1017,6 +1124,7 @@ require('lazy').setup({
   require 'custom.plugins.vim-be-good',
   require 'custom.plugins.diffview',
   require 'custom.plugins.minuet',
+  require 'custom.plugins.database',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
