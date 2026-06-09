@@ -801,8 +801,16 @@ require('lazy').setup({
           }
         end
       end,
+      formatters = {
+        pg_format = {
+          prepend_args = {},
+        },
+      },
       formatters_by_ft = {
         lua = { 'stylua' },
+        sql = { 'pg_format' },
+        mysql = { 'pg_format' },
+        plsql = { 'pg_format' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -1170,6 +1178,7 @@ require('lazy').setup({
   require 'custom.plugins.colorschemes',
   require 'custom.plugins.vim-be-good',
   require 'custom.plugins.diffview',
+  require 'custom.plugins.octo',
   require 'custom.plugins.minuet',
   require 'custom.plugins.database',
 
