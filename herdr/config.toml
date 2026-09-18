@@ -1,0 +1,56 @@
+onboarding = false
+# herdr configuration
+# Place this file at ~/.config/herdr/config.toml
+#
+# Keybindings below mirror ~/.config/nvim/tmux/tmux.conf (source of truth: tmux.conf, prefix ctrl+b unchanged).
+
+[keys]
+# Prefix stays the tmux default so all prefix+... actions (new tab, splits picker,
+# workspace nav, etc.) already match stock tmux out of the box.
+prefix = "ctrl+b"
+
+# --- Direct (no-prefix) pane navigation, matching tmux's `bind-key -n C-h/j/k/l` ---
+# NOTE: your tmux.conf makes these Vim-aware (forwards the key into Neovim at
+# a split edge instead of switching panes). Plain config bindings can't run that
+# shell check, so these currently ALWAYS move the herdr pane focus, even while
+# inside Neovim. See the vim-herdr-navigation plugin note below for full parity.
+focus_pane_left = "ctrl+h"
+focus_pane_down = "ctrl+j"
+focus_pane_up = "ctrl+k"
+focus_pane_right = "ctrl+l"
+
+# tmux: `bind-key -n C-\ select-pane -l` (last active pane)
+last_pane = "ctrl+backslash"
+
+# tmux: `bind-key -n C-Space select-pane -t:.+` (cycle to next pane)
+cycle_pane_next = "ctrl+space"
+
+# tmux: `bind-key -n M-m copy-mode -e`
+copy_mode = "alt+m"
+
+# tmux: `bind-key -n M-L split-window -h` (side-by-side / vertical split)
+# tmux: `bind-key -n M-K split-window -v` (stacked / horizontal split)
+# Note: capital L/K in tmux -n bindings mean Alt+Shift+letter.
+split_vertical = "alt+shift+l"
+split_horizontal = "alt+shift+k"
+
+# tmux: `bind-key -n M-Q kill-pane`
+close_pane = "alt+shift+q"
+
+# tmux: `bind-key -n M-D detach-client`
+detach = "alt+shift+d"
+
+# --- Direct (no-prefix) tab shortcuts (not in tmux.conf, added per request) ---
+# Arrays keep the existing prefix+... binding working alongside the new direct chord.
+# alt+h = previous tab, alt+l = next tab, alt+n = new tab, alt+q = close tab.
+previous_tab = ["prefix+p", "alt+h"]
+next_tab = ["prefix+n", "alt+l"]
+new_tab = ["prefix+c", "alt+n"]
+close_tab = ["prefix+shift+x", "alt+q"]
+
+[theme]
+name = "catppuccin-latte"
+auto_switch = false
+
+[ui]
+show_agent_labels_on_pane_borders = true

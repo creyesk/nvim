@@ -704,7 +704,7 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         gopls = {},
-        -- pyright = {},
+        pyright = {},
         rust_analyzer = {
           settings = {
             ['rust-analyzer'] = {
@@ -730,6 +730,9 @@ require('lazy').setup({
       --
       -- You can press `g?` for help in this menu.
       local ensure_installed = vim.tbl_keys(servers or {})
+      ensure_installed = vim.tbl_filter(function(name)
+        return name ~= 'pyright'
+      end, ensure_installed)
       vim.list_extend(ensure_installed, {
         'lua_ls', -- Lua Language server
         'stylua', -- Used to format Lua code
@@ -812,7 +815,7 @@ require('lazy').setup({
         mysql = { 'pg_format' },
         plsql = { 'pg_format' },
         -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
+        python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
